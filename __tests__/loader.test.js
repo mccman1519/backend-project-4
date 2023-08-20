@@ -17,17 +17,18 @@ const defaultOutput = path.resolve(cwd());
 const url = new URL(rawUrl);
 const loader = new PageLoader();
 
-test('If loadPage() make a request', async () => {
-  const scope = nock(url.origin).get(url.pathname).reply(200, 'Some html data');
+let scope;
 
+beforeEach(() => {
+  scope = nock(url.origin).get(url.pathname).reply(200, '<html></html>');
+});
+
+test('If loadPage() make a request', async () => {
   await loader.loadPage(rawUrl);
   expect(scope.isDone()).toBe(true);
 });
 
 test('If save() returns a valid filename', async () => {
-  nock(url.origin).get(url.pathname).reply(200, 'Some html data');
-
-  // const fileName = loader.loadPage(rawUrl).save(filePath);
   let fileName;
   await loader.loadPage(rawUrl)
     .then(() => loader.save(filePath))
@@ -41,9 +42,7 @@ describe('If loaded document exists in file system', () => {
     mock({
       [filePath]: {
         'fixture.html': '<html></html>',
-        // [docName]: '<html></html>',
       },
-      //'path/to/some.png': Buffer.from([8, 6, 7, 5, 3, 0, 9]),
       [defaultOutput]: {
         // empty
       },
@@ -52,25 +51,21 @@ describe('If loaded document exists in file system', () => {
 
   afterEach(mock.restore);
 
-  test('Default name', async () => {
-    nock(url.origin).get(url.pathname).reply(200, '<html></html>');
-  
+  test('With default path', async () => {
     await loader.loadPage(rawUrl).then(() => loader.save(defaultOutput));
-  
     const fileNameDef = path.join(defaultOutput, docName);
-    // const contentDef = await fs.readFile(fileNameDef, 'utf-8');
-  
     expect(await fs.access(fileNameDef, constants.R_OK | constants.W_OK)).toBeUndefined();
   });
 
-  test('Specified filename', async () => {
-    nock(url.origin).get(url.pathname).reply(200, '<html></html>');
-  
+  test('With specified filename', async () => {
     await loader.loadPage(rawUrl).then(() => loader.save(filePath));
-  
     const fileNameSpec = path.join(filePath, docName);
-    // const contentSpec = await fs.readFile(fileNameSpec, 'utf-8');
-  
     expect(await fs.access(fileNameSpec, constants.R_OK | constants.W_OK)).toBeUndefined();
   });
+});
+
+test('Behavior with invalid URL', async () => {
+  await expect(() => loader.loadPage('invalid.com')).rejects.toThrow(
+    'Invalid URL'
+  );
 });

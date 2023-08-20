@@ -20,7 +20,8 @@ program
 
     loader.loadPage(url)
       .then(() => loader.save(outputPath))
-      .then((resultFileName) => console.log(`Page successfuly downloaded into ${resultFileName}`));
+      .then((resultFileName) => console.log(`Page successfuly downloaded into ${resultFileName}`))
+      .catch((err) => console.log(err.message));
   });
 
 program.parse();
