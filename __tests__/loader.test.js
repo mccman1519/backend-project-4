@@ -1,71 +1,108 @@
 /* eslint-disable no-undef */
 import nock from 'nock';
-import mock from 'mock-fs';
 import path from 'path';
 import { cwd } from 'process';
+import { fileURLToPath } from 'url';
 import * as fs from 'node:fs/promises';
 import PageLoader from '../src/loader.js';
 import { constants } from 'fs';
+import os from 'os';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const getFixturePath = (name) => path.join(__dirname, '..', '__fixtures__', name);
+
+const docName = 'ru-hexlet-io-courses.html';
+const filePath = '/home/collider/repos/hexlet/backend-project-4/out';
+const filesDir = 'ru-hexlet-io-courses_files';
+const defaultOutput = path.resolve(cwd());
+const filesDirName = path.join(filePath, filesDir);
+const pngName = 'nodejs.png';
+const imageFilename = path.join(filesDirName, pngName);
+
+const rawHtml = await fs.readFile(getFixturePath('raw.html'));
+const expectedHtml = await fs.readFile(getFixturePath('expected.html'));
+const imagePng = await fs.readFile('__fixtures__/nodejs.png', 'binary');
+
+const pageUrl = new URL('https://ru.hexlet.io/courses');
+const imageURL = new URL('https://ru.hexlet.io/assets/professions/nodejs.png');
+
+let tmpDir;
+let currFilesDir;
+let specOutput;
+let currNestedFilesDir;
 
 nock.disableNetConnect();
 
-const rawUrl = 'https://www.github.com/nock/nock';
-const docName = 'www-github-com-nock-nock.html';
-const filePath = '/home/collider/repos/hexlet/backend-project-4/out';
-const defaultOutput = path.resolve(cwd());
+beforeEach(async () => {
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
+  process.chdir(tmpDir);
+  currFilesDir = path.join(cwd(), filesDir);
+  specOutput = await fs.mkdtemp(path.join(tmpDir, 'spec-'));
+  currNestedFilesDir = path.join(specOutput, filesDir);
+});
 
-const url = new URL(rawUrl);
-const loader = new PageLoader();
+afterEach(async () => {
+  process.chdir(cwd());
+  await fs.rmdir(tmpDir, { recursive: true });
+});
 
-let scope;
-
-beforeEach(() => {
-  scope = nock(url.origin).get(url.pathname).reply(200, '<html></html>');
+test('Behavior with invalid URL', async () => {
+  await expect(() => new PageLoader('invalid.com')).toThrow(
+    'Invalid URL'
+  );
 });
 
 test('If loadPage() make a request', async () => {
-  await loader.loadPage(rawUrl);
+  const scope = nock(pageUrl.origin).get(pageUrl.pathname).reply(200);
+  await (new PageLoader(pageUrl.href, filePath).loadPage());
   expect(scope.isDone()).toBe(true);
 });
 
-test('If save() returns a valid filename', async () => {
-  let fileName;
-  await loader.loadPage(rawUrl)
-    .then(() => loader.save(filePath))
-    .then((resultFileName) => fileName = resultFileName);
+test('If loadPage() returns a valid filename', async () => {
+  nock(pageUrl.origin).get(pageUrl.pathname).reply(200, '<html></html>');
+  let resultFileName;
+  await new PageLoader(pageUrl.href, filePath).loadPage()
+    .then(({fileName}) => resultFileName = fileName)
 
-  expect(fileName).toEqual(path.join(filePath, docName));
+  expect(resultFileName).toEqual(path.join(filePath, docName));
 });
 
 describe('If loaded document exists in file system', () => {
-  beforeEach(function() {
-    mock({
-      [filePath]: {
-        'fixture.html': '<html></html>',
-      },
-      [defaultOutput]: {
-        // empty
-      },
-    });
-  });
-
-  afterEach(mock.restore);
-
   test('With default path', async () => {
-    await loader.loadPage(rawUrl).then(() => loader.save(defaultOutput));
+    nock(pageUrl.origin).get(pageUrl.pathname).reply(200, rawHtml);
+    await new PageLoader(pageUrl.href, defaultOutput).loadPage();
     const fileNameDef = path.join(defaultOutput, docName);
     expect(await fs.access(fileNameDef, constants.R_OK | constants.W_OK)).toBeUndefined();
   });
 
   test('With specified filename', async () => {
-    await loader.loadPage(rawUrl).then(() => loader.save(filePath));
-    const fileNameSpec = path.join(filePath, docName);
+    nock(pageUrl.origin).get(pageUrl.pathname).reply(200, rawHtml);
+    await new PageLoader(pageUrl.href, specOutput).loadPage();
+    const fileNameSpec = path.join(specOutput, docName);
     expect(await fs.access(fileNameSpec, constants.R_OK | constants.W_OK)).toBeUndefined();
   });
 });
 
-test('Behavior with invalid URL', async () => {
-  await expect(() => loader.loadPage('invalid.com')).rejects.toThrow(
-    'Invalid URL'
-  );
+describe('Check images and directories', () => {
+  test.skip('[UNNECESSARY] Image dir was created', async () => {
+    nock(pageUrl.origin).get(pageUrl.pathname).reply(200, rawHtml);
+    await new PageLoader(pageUrl.href, filePath).loadPage();
+    expect(await fs.access(filesDirName, constants.R_OK | constants.W_OK)).toBeUndefined();    
+  });
+
+  test('Image was loaded into the dir', async () => {
+    nock(pageUrl.origin)
+      .get(pageUrl.pathname)
+      .reply(200, rawHtml)
+      .get(imageURL.pathname)
+      .replyWithFile(200, getFixturePath('nodejs.png'));
+    await new PageLoader(pageUrl.href, filePath).loadImages(rawHtml);
+    expect(await fs.access(imageFilename, constants.R_OK | constants.W_OK)).toBeUndefined();   
+  });
+
+  test.skip('Correct link in html', () => {
+    // Get link from loaded html and compare with <relativePath + pngName>
+    return false;
+  });
 });

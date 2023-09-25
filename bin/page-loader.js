@@ -15,13 +15,24 @@ program
   .argument('<url>')
   // .argument('<filepath2>')
   .action((url) => {
-    const outputPath = program.opts().output ?? defaultOutput;
-    const loader = new PageLoader();
+    const outputPath = path.resolve(program.opts().output) ?? defaultOutput;
+    const loader = new PageLoader(url, outputPath);
 
-    loader.loadPage(url)
-      .then(() => loader.save(outputPath))
-      .then((resultFileName) => console.log(`Page successfuly downloaded into ${resultFileName}`))
+    loader.loadPage()
+      //.then(() => loader.save(outputPath))
+      .then(({fileName, _data}) => console.log(`Page successfuly downloaded into ${fileName}\n`))
       .catch((err) => console.log(err.message));
+
+    // loader.loadPage(url).then(() => loader.patch());
+
+    /**
+     * for tests only
+     */
+    /*
+    const docName = url.split('://')[1].replace(/[^0-9a-z]/gim, '-') + '.html';
+    const fileName = path.join(outputPath, docName);
+    loader.loadPage(url).then(() => loader.loadImages(fileName));
+    */
   });
 
 program.parse();
