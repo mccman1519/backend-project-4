@@ -20,7 +20,10 @@ program
 
     loader.loadPage()
       //.then(() => loader.save(outputPath))
-      .then(({fileName, _data}) => console.log(`Page successfuly downloaded into ${fileName}\n`))
+      .then(({fileName, data}) => {
+        loader.loadImages(data)
+          .then(() => console.log(`Page successfuly downloaded into ${fileName}\n`));        
+      })
       .catch((err) => console.log(err.message));
 
     // loader.loadPage(url).then(() => loader.patch());
