@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import * as fs from "node:fs/promises";
-// import { constants } from 'node:fs';
+import { isValidHttpUrl, getTopDomainName, makeLocalFilename, makeValidURLFromSrc} from './utils.js';
 import path from "node:path";
 
 
@@ -25,39 +25,49 @@ export default class PageLoader {
 
   loadImages(pageData, timeout = 3000) {
     const $ = cheerio.load(pageData);
-    return new Promise(resolve => {
+    return (
       fs
         .mkdir(this.filesDirName)
         // Skip not dir exist error
         .catch(() => {})
         .then(() => {
-          $("img").each((i, image) => {
-            const attrSrc = $(image).attr("src");
+          let promises = [];
+
+          $('img').each((i, image) => {
+            const attrSrc = $(image).attr('src');
             const validSrc = makeValidURLFromSrc(attrSrc, this.url);
             const imageTopDomain = getTopDomainName(validSrc.hostname);
 
             if (imageTopDomain === this.topDomain) {
-              axios({
-                method: "get",
-                url: validSrc.toString(),
-                responseType: "stream",
-                timeout: timeout,
-              })
-                .then((response) => {
-                  const { absFilename } = makeLocalFilename(
-                    validSrc,
-                    this.filesDirName
-                  );
-                  return fs.writeFile(absFilename, response.data, "binary");
+              const promise = new Promise((resolve, reject) => {
+                
+                console.log(`Downloading ${validSrc}...`);
+
+                axios({
+                  method: 'get',
+                  url: validSrc.toString(),
+                  responseType: 'stream',
+                  timeout: timeout,
                 })
-                .catch((err) => {
-                  // Catching loading errors
-                  err;
-                });
+                  .then((response) => {
+                    const { absFilename } = makeLocalFilename(
+                      validSrc,
+                      this.filesDirName
+                    );
+                    resolve(fs.writeFile(absFilename, response.data, 'binary'));
+                  })
+                  .catch((err) => {
+                    reject(err);
+                  });
+              });
+
+              promises = [...promises, promise];
             } else {
               console.log('Skipped external URL', validSrc.href);
             }
           });
+
+          return Promise.all(promises);
         })
     );
   }
@@ -65,8 +75,8 @@ export default class PageLoader {
   patch(pageData) {
     const $ = cheerio.load(pageData);
 
-    $("img").each((i, image) => {
-      const src = makeValidURLFromSrc($(image).attr("src"), this.url);
+    $('img').each((i, image) => {
+      const src = makeValidURLFromSrc($(image).attr('src'), this.url);
       const { relFilename } = makeLocalFilename(src, this.filesDirName);
       $(image).attr('src', relFilename);
     });
@@ -74,11 +84,6 @@ export default class PageLoader {
     return $.html();
   }
 
-  /**
-   * 
-   * На текущий момент не загружает страницу, если не получены картинки
-   * тесты сука так и не проходят загрузку изображений
-   */
   loadPage() {
     const fileName = path.join(this.filePath, this.docName);
 
