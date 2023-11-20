@@ -15,12 +15,13 @@ const getFixturePath = (name) => path.join(__dirname, '..', '__fixtures__', name
 
 const docName = 'ru-hexlet-io-courses.html';
 const filesDir = 'ru-hexlet-io-courses_files';
-const pngName = 'nodejs.png';
 
 const rawHtml = await fs.readFile(getFixturePath('raw.html'));
+const expectedHtml = await fs.readFile(getFixturePath('expected.html'));
 
 const pageUrl = new URL('https://ru.hexlet.io/courses');
 const imageURL = new URL('https://ru.hexlet.io/assets/professions/nodejs.png');
+const cssURL = new URL('https://ru.hexlet.io/assets/application.css');
 
 let tmpDir;
 let specOutput;
@@ -86,13 +87,25 @@ describe('Check images and directories', () => {
     nock(pageUrl.origin)
       .get(imageURL.pathname)
       .replyWithFile(200, getFixturePath('nodejs.png'));
-      const { absFilename: imageFileName } = makeLocalFilename(imageURL, path.join(tmpDir, filesDir));     
-    await new PageLoader(pageUrl.href, tmpDir).loadImages(rawHtml);
+    const { absFilename: imageFileName } = makeLocalFilename(imageURL, path.join(tmpDir, filesDir));     
+    await new PageLoader(pageUrl.href, tmpDir).load('img', rawHtml);
     expect(await fs.access(imageFileName, constants.R_OK | constants.W_OK)).toBeUndefined();   
   });
+});
 
-  test.skip('Correct link in html', () => {
-    // Get link from loaded html and compare with <relativePath + pngName>
-    return false;
+describe('Check resources and HTML changes', () => {
+  test('LINK tag resource download', async () => {
+    nock(pageUrl.origin)
+      .get(cssURL.pathname)
+      .replyWithFile(200, getFixturePath('mock.css'))
+      .get(pageUrl.pathname) // Проверить скачку всех ресурсов, в т.ч. .html
+      .reply(200)
+    const { absFilename: cssFileName } = makeLocalFilename(cssURL, path.join(tmpDir, filesDir));     
+    await new PageLoader(pageUrl.href, tmpDir).load('link', rawHtml);
+    expect(await fs.access(cssFileName, constants.R_OK | constants.W_OK)).toBeUndefined();
+  });
+
+  test('SCRIPT tag resource download', async () => {
+    
   });
 });

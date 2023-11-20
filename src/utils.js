@@ -47,7 +47,7 @@ const makeValidURLFromSrc = (src, pageURL) => {
   if (!isValidHttpUrl(src)) {
     // fix URL
     //console.log(this.url.origin, src);
-    return new URL(src, pageURL.origin);
+    return new URL(src || '', pageURL.origin);
   } else {
     return new URL(src);
   }
