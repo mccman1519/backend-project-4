@@ -71,18 +71,20 @@ export default class PageLoader {
                 validSrc,
                 this.filesDirName
               );
-              console.log(
+              /* console.log(
                 "TYPE",
                 response.headers["content-type"],
                 mime.getExtension(response.headers["content-type"])
-              ); 
+              ); */ 
               // Разбираться еще здесь и в патчинге
               // в link может быть какой угодно ресурс - как выбрать расширение файла и нужно ли вообще,
               // если его нет в атрибуте href?
               // о типе файла должен говорить rel и/или type
               // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel
-              if (selector === 'link' && $(resource).attr('rel') === 'canonical') {
-                absFilename += '.html';
+              const relValue = $(resource).attr('rel');
+              if (selector === 'link' && (relValue === 'canonical'/*  || relValue === 'alternate' */)) {
+                // hotfix. Add ${ext} to all resources loaded
+                absFilename = `${absFilename}.html`;
               }
               fs.mkdir(this.filesDirName)
                 // Skip dir already exist error
@@ -130,7 +132,12 @@ export default class PageLoader {
           $(item).attr(attrName) !== undefined
         ) {
           const src = makeValidURLFromSrc($(item).attr(attrName), this.url);
-          const { relFilename } = makeLocalFilename(src, this.filesDirName);
+          let { relFilename } = makeLocalFilename(src, this.filesDirName);
+
+          // hotfix. Add ${ext} to all resources loaded
+          if (selector === 'link' && $(item).attr('rel') === 'canonical') {
+            relFilename = `${relFilename}.html`;
+          }
           $(item).attr(attrName, relFilename);
         }
       });
