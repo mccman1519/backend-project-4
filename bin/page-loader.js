@@ -1,5 +1,8 @@
 #!/usr/bin/env node
+
 /* eslint-disable indent */
+
+import debug from 'debug';
 import { Command } from "commander";
 import path from "path";
 import { cwd } from "process";
@@ -12,11 +15,16 @@ program
   .description('Compares two configuration files and shows a difference.')
   .version('1.0.0')
   .option('-o, --output <dir>', 'output dir', `${defaultOutput}`)
+  .option('-d --debug', 'enables debug logger')
   .argument('<url>')
   // .argument('<filepath2>')
   .action(async (url) => {
     const outputPath = path.resolve(program.opts().output) ?? defaultOutput;
     const loader = new PageLoader(url, outputPath);
+
+    if (program.opts().debug) {
+      debug.enable('page-loader*,axios');
+    }
 
     loader
       .loadPage()
@@ -32,16 +40,7 @@ program
       .then((fileName) =>
         console.log(`Page successfuly downloaded into ${fileName}\n`)
       )
-      .catch((err) => console.log(err.message));
-
-    /**
-     * for tests only
-     */
-    /*
-    const docName = url.split('://')[1].replace(/[^0-9a-z]/gim, '-') + '.html';
-    const fileName = path.join(outputPath, docName);
-    loader.loadPage(url).then(() => loader.loadImages(fileName));
-    */
+      .catch((err) => console.error(err.message));
   });
 
 program.parse();

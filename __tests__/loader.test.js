@@ -1,4 +1,5 @@
 /* eslint-disable no-undef */
+
 import nock from 'nock';
 import path from 'path';
 import { cwd } from 'process';
@@ -17,7 +18,7 @@ const docName = 'ru-hexlet-io-courses.html';
 const filesDir = 'ru-hexlet-io-courses_files';
 
 const rawHtml = await fs.readFile(getFixturePath('raw.html'), 'utf-8');
-const expectedHtml = await fs.readFile(getFixturePath('expected.html'));
+const expectedHtml = await fs.readFile(getFixturePath('expected.html'), 'utf-8');
 
 const pageUrl = new URL('https://ru.hexlet.io/courses');
 const imageURL = new URL('https://ru.hexlet.io/assets/professions/nodejs.png');
@@ -101,7 +102,7 @@ describe('Check resources and HTML changes', () => {
       .replyWithFile(200, getFixturePath('mock.css'), {
         'Content-Type': 'text/css; charset=utf-8',
       })
-      .get(pageUrl.pathname) // Проверить скачку всех ресурсов, в т.ч. .html
+      .get(pageUrl.pathname)
       .reply(200, rawHtml, {
         'Content-Type': 'text/html; charset=utf-8',
       })
@@ -128,7 +129,8 @@ describe('Check resources and HTML changes', () => {
     nock(pageUrl.origin).get(pageUrl.pathname).reply(200, rawHtml, {
       'Content-Type': 'text/html; charset=utf-8',
     });
-    const { data: loadedHtml } = await new PageLoader(pageUrl.href, tmpDir).loadPage();
-    expect(loadedHtml).toEqual(rawHtml);
+    const { fileName } = await new PageLoader(pageUrl.href, tmpDir).loadPage();
+    const loadedHtml = await fs.readFile(fileName, 'utf-8');
+    expect(loadedHtml).toEqual(expectedHtml);
   });
 });

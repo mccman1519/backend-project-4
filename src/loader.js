@@ -4,6 +4,18 @@ import * as fs from "node:fs/promises";
 import { isValidHttpUrl, getTopDomainName, makeLocalFilename, makeValidURLFromSrc} from './utils.js';
 import path from "node:path";
 import mime from 'mime';
+import debug from 'debug';
+import 'axios-debug-log';
+import { errorHandler } from "./errors.js";
+
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    errorHandler(error);
+  },
+);
+
+const log = debug('page-loader');
 
 export default class PageLoader {
   constructor(url, filePath) {
@@ -56,14 +68,13 @@ export default class PageLoader {
 
       if (validSrc.hostname === this.url.hostname) {
         const promise = new Promise((resolve, reject) => {
-          console.log(`Downloading ${validSrc}...`);
+          log(`Downloading ${validSrc}...`);
 
           axios({
             method: 'get',
             url: validSrc.toString(),
             responseType,
             timeout,
-            // headers: {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'},
           })
             .then((response) => {
               const ext = `.${mime.getExtension(response.headers["content-type"])}`;
@@ -71,19 +82,12 @@ export default class PageLoader {
                 validSrc,
                 this.filesDirName
               );
-              /* console.log(
-                "TYPE",
-                response.headers["content-type"],
-                mime.getExtension(response.headers["content-type"])
-              ); */ 
-              // Разбираться еще здесь и в патчинге
               // в link может быть какой угодно ресурс - как выбрать расширение файла и нужно ли вообще,
               // если его нет в атрибуте href?
               // о типе файла должен говорить rel и/или type
               // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel
               const relValue = $(resource).attr('rel');
               if (selector === 'link' && (relValue === 'canonical'/*  || relValue === 'alternate' */)) {
-                // hotfix. Add ${ext} to all resources loaded
                 absFilename = `${absFilename}.html`;
               }
               fs.mkdir(this.filesDirName)
@@ -95,12 +99,11 @@ export default class PageLoader {
             })
             .catch((err) => {
               reject(`Failed download ${validSrc.toString()}: ${err.code}`);
-              // console.log((`Failed download ${validSrc.toString()}: ${err.code}`));
             });
         });
         promises = [...promises, promise];
       } else {
-        console.log('Skipped external URL', validSrc.href);
+        log(`Skipped external URL ${validSrc.href}`);
       }
     });
 
@@ -119,8 +122,6 @@ export default class PageLoader {
     };
     const $ = cheerio.load(pageData);
 
-    // Сделать пропуск внешних ресурсов
-
     Object.entries(mapping).forEach(([selector, attrName]) => {
       $(selector).each((i, item) => {
         const attrSrc = $(item).attr(attrName);
@@ -134,7 +135,6 @@ export default class PageLoader {
           const src = makeValidURLFromSrc($(item).attr(attrName), this.url);
           let { relFilename } = makeLocalFilename(src, this.filesDirName);
 
-          // hotfix. Add ${ext} to all resources loaded
           if (selector === 'link' && $(item).attr('rel') === 'canonical') {
             relFilename = `${relFilename}.html`;
           }
@@ -150,7 +150,6 @@ export default class PageLoader {
     const fileName = path.join(this.filePath, this.docName);
 
     return axios.get(this.url).then(({ data }) => {
-      // Images are loaded asynchronously with the page (!)
       const patchedData = this.patch(data);
       return fs
         .writeFile(fileName, patchedData, 'utf-8')
