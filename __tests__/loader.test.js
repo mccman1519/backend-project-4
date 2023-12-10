@@ -25,6 +25,15 @@ const imageURL = new URL('https://ru.hexlet.io/assets/professions/nodejs.png');
 const cssURL = new URL('https://ru.hexlet.io/assets/application.css');
 const jsURL = new URL('https://ru.hexlet.io/packs/js/runtime.js');
 
+// eslint-disable-next-line no-unused-vars
+const non200Response = () => {
+  // it's enough for testing
+  const rnd = Math.floor(Math.random() * 500) + 100;
+  return rnd === 200
+    ? rnd + Math.floor(Math.random() * 399)
+    : rnd;
+}
+
 let tmpDir;
 let specOutput;
 
@@ -132,5 +141,42 @@ describe('Check resources and HTML changes', () => {
     const { fileName } = await new PageLoader(pageUrl.href, tmpDir).loadPage();
     const loadedHtml = await fs.readFile(fileName, 'utf-8');
     expect(loadedHtml).toEqual(expectedHtml);
+  });
+});
+
+describe('Error handling', () => {
+  test('Test HTTP non-200 responces for page', async () => {
+    nock(pageUrl.origin).get(pageUrl.pathname).reply(201);
+    await expect(new PageLoader(pageUrl.href, tmpDir).loadPage()).rejects.toThrow();
+  });
+
+  test('Test HTTP non-200 responces for resources', async () => {
+    nock(pageUrl.origin).get(jsURL.pathname).reply(201);
+    await expect(new PageLoader(pageUrl.href, tmpDir).load('script', rawHtml)).rejects.toThrow();
+  });
+
+  test('File operations: page', async () => {
+    nock(pageUrl.origin).get(pageUrl.pathname).reply(200, rawHtml, {
+      'Content-Type': 'text/html; charset=utf-8',
+    });
+    fs.chmod(tmpDir, 0);
+    await expect(new PageLoader(pageUrl.href, tmpDir).loadPage()).rejects.toThrow();
+    fs.chmod(tmpDir, 0o777);
+  });
+
+  /**
+   * THIS DOESNT WORK
+   */
+  test('File operations: resources', async () => {
+    nock(pageUrl.origin)
+      .get(jsURL.pathname)
+      .reply(200, 'this is js script', {
+        'Content-Type': 'text/javascript; charset=utf-8',
+      });
+
+    const curFilesDir = path.join(tmpDir, filesDir);
+    fs.mkdir(curFilesDir, 0);
+    await expect(new PageLoader(pageUrl.href, tmpDir).load('script', rawHtml)).rejects.toThrow();
+    fs.chmod(curFilesDir, 0o777);
   });
 });

@@ -1,18 +1,26 @@
-import axios from "axios";
-import * as cheerio from "cheerio";
-import * as fs from "node:fs/promises";
-import { isValidHttpUrl, getTopDomainName, makeLocalFilename, makeValidURLFromSrc} from './utils.js';
-import path from "node:path";
-import mime from 'mime';
+import axios, { AxiosError } from 'axios';
+import * as cheerio from 'cheerio';
+import * as fs from 'node:fs/promises';
+import {
+  isValidHttpUrl,
+  getTopDomainName,
+  makeLocalFilename,
+  makeValidURLFromSrc,
+} from './utils.js';
+import path from 'node:path';
+// import mime from 'mime';
 import debug from 'debug';
 import 'axios-debug-log';
-import { errorHandler } from "./errors.js";
+import { errorHandler } from './errors/errors.js';
 
 axios.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.status !== 200) throw new Error('Status is not 200');
+    return response;
+  },
   (error) => {
     errorHandler(error);
-  },
+  }
 );
 
 const log = debug('page-loader');
@@ -24,7 +32,6 @@ export default class PageLoader {
     }
 
     this.url = new URL(url);
-    this.topDomain = getTopDomainName(this.url.hostname); // REMOVE?
     this.filePath = filePath;
     this.docName =
       this.url.href.split('://')[1].replace(/[^0-9a-z]/gim, '-') + '.html';
@@ -77,7 +84,6 @@ export default class PageLoader {
             timeout,
           })
             .then((response) => {
-              const ext = `.${mime.getExtension(response.headers["content-type"])}`;
               let { absFilename } = makeLocalFilename(
                 validSrc,
                 this.filesDirName
@@ -87,18 +93,22 @@ export default class PageLoader {
               // о типе файла должен говорить rel и/или type
               // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel
               const relValue = $(resource).attr('rel');
-              if (selector === 'link' && (relValue === 'canonical'/*  || relValue === 'alternate' */)) {
+              if (selector === 'link' && relValue === 'canonical') {
                 absFilename = `${absFilename}.html`;
               }
               fs.mkdir(this.filesDirName)
                 // Skip dir already exist error
                 .catch(() => {})
                 .then(() => {
-                  resolve(fs.writeFile(absFilename, response.data, encoding));
+                  resolve(
+                    fs
+                      .writeFile(absFilename, response.data, encoding)
+                      .catch((err) => errorHandler(err))
+                  );
                 });
             })
             .catch((err) => {
-              reject(`Failed download ${validSrc.toString()}: ${err.code}`);
+              reject(err);
             });
         });
         promises = [...promises, promise];
@@ -149,11 +159,13 @@ export default class PageLoader {
   loadPage() {
     const fileName = path.join(this.filePath, this.docName);
 
-    return axios.get(this.url).then(({ data }) => {
+    return axios.get(this.url).then(({ data, status }) => {
+      if (status !== 200) throw new AxiosError();
       const patchedData = this.patch(data);
       return fs
         .writeFile(fileName, patchedData, 'utf-8')
-        .then(() => ({ fileName, data }));
+        .then(() => ({ fileName, data }))
+        .catch((err) => errorHandler(err));
     });
   }
 }
