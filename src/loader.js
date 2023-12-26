@@ -121,7 +121,7 @@ export default class PageLoader {
   }
 
   load(tag, pageData, timeout = 1000) {
-    return Promise.all(this.#loadResources(tag, pageData, timeout));
+    return Promise.allSettled(this.#loadResources(tag, pageData, timeout));
   }
 
   patch(pageData) {

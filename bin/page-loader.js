@@ -8,6 +8,7 @@ import path from "path";
 import { cwd } from "process";
 import PageLoader from "../src/loader.js";
 import process from 'process';
+import Listr from 'listr';
 
 const errorLog = debug('page-loader:error');
 
@@ -26,18 +27,49 @@ program
 
     if (program.opts().debug) {
       // console.dir({...debug});
-      
       debug.enable('page-loader*,axios');
-      
     }
 
-    loader
+    new Listr([
+      {
+        title: 'Load HTML data',
+        task: (ctx) => {
+          loader
+            .loadPage()
+            .then(({fileName, data}) => {
+              ctx.fileName = fileName;
+
+              new Listr([
+                {
+                  title: 'Loading images',
+                  task: (ctx) => loader.load('img', data)
+                },
+                {
+                  title: 'Loading links',
+                  task: (ctx) => loader.load('link', data)
+                },
+                {
+                  title: 'Loading scripts',
+                  task: (ctx) => loader.load('script', data)
+                }
+              ], {concurrent: true}).run();
+            })
+            // .then((fileName) => console.log(`Page successfuly downloaded into ${fileName}`))
+            .catch((err) => {
+              console.log(err.message);
+              process.exit(1);
+            })
+        },
+      },
+    ]).run();
+
+/*     loader
       .loadPage()
       .then(({ fileName, data }) => {
         return Promise.all([
-          loader.load('img', data)/* .catch((err) => console.error(err)) */,
-          loader.load('link', data)/* .catch((err) => console.error(err)) */,
-          loader.load('script', data)/* .catch((err) => console.error(err)) */,
+          loader.load('img', data),
+          loader.load('link', data),
+          loader.load('script', data),
         ])
         .catch(err => errorLog(err))
         .then(() => fileName) // Passthrough fileName when everything is done
@@ -48,7 +80,7 @@ program
       .catch((err) => {
         console.log(err.message);
         process.exit(1);
-      })
+      }) */
   });
 
 program.parse();
