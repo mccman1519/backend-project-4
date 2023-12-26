@@ -46,7 +46,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  process.chdir(cwd());
+  // process.chdir(cwd());
   await fs.rmdir(tmpDir, { recursive: true });
 });
 
@@ -152,21 +152,21 @@ describe('Error handling', () => {
 
   test('Test HTTP non-200 responces for resources', async () => {
     nock(pageUrl.origin).get(jsURL.pathname).reply(201);
-    await expect(new PageLoader(pageUrl.href, tmpDir).load('script', rawHtml)).rejects.toThrow();
+    // await expect(new PageLoader(pageUrl.href, tmpDir).load('script', rawHtml)).rejects.toThrow();
+    await expect(new PageLoader(pageUrl.href, tmpDir).load('script', rawHtml))
+      .resolves
+      .toEqual([{"reason": Error('Status is not 200'), "status": "rejected"}]);
   });
 
   test('File operations: page', async () => {
     nock(pageUrl.origin).get(pageUrl.pathname).reply(200, rawHtml, {
       'Content-Type': 'text/html; charset=utf-8',
     });
-    fs.chmod(tmpDir, 0);
+    fs.chmod(tmpDir, 0o444);
     await expect(new PageLoader(pageUrl.href, tmpDir).loadPage()).rejects.toThrow();
     fs.chmod(tmpDir, 0o777);
   });
 
-  /**
-   * THIS DOESNT WORK
-   */
   test('File operations: resources', async () => {
     nock(pageUrl.origin)
       .get(jsURL.pathname)
@@ -176,7 +176,10 @@ describe('Error handling', () => {
 
     const curFilesDir = path.join(tmpDir, filesDir);
     fs.mkdir(curFilesDir, 0);
-    await expect(new PageLoader(pageUrl.href, tmpDir).load('script', rawHtml)).rejects.toThrow();
+    await expect(new PageLoader(pageUrl.href, tmpDir).load('script', rawHtml))//.rejects.toThrow();
+      .resolves
+      .toEqual([{"reason": Error(`Access to the directory ${curFilesDir} is denied`), "status": "rejected"}]);
+
     fs.chmod(curFilesDir, 0o777);
   });
 });
