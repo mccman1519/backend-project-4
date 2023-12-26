@@ -23,7 +23,7 @@ program
   .argument('<url>')
   .action(async (url) => {
     const outputPath = path.resolve(program.opts().output) ?? defaultOutput;
-    const loader = new PageLoader(url, outputPath);
+    const loader = PageLoader(url, outputPath);
 
     if (program.opts().debug) {
       // console.dir({...debug});

@@ -25,7 +25,7 @@ axios.interceptors.response.use(
 
 const log = debug('page-loader');
 
-export default class PageLoader {
+class PageLoader {
   constructor(url, filePath) {
     if (!isValidHttpUrl(url)) {
       throw new TypeError('Invalid URL (maybe forget protocol?)');
@@ -169,3 +169,5 @@ export default class PageLoader {
     });
   }
 }
+
+export default (url, filePath) => new PageLoader(url, filePath);

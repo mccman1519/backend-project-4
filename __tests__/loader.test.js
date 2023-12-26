@@ -51,21 +51,21 @@ afterEach(async () => {
 });
 
 test('Behavior with invalid URL', async () => {
-  await expect(() => new PageLoader('invalid.com')).toThrow(
+  await expect(() => PageLoader('invalid.com')).toThrow(
     'Invalid URL'
   );
 });
 
 test('If loadPage() make a request', async () => {
   const scope = nock(pageUrl.origin).get(pageUrl.pathname).reply(200);
-  await (new PageLoader(pageUrl.href, tmpDir).loadPage());
+  await PageLoader(pageUrl.href, tmpDir).loadPage();
   expect(scope.isDone()).toBe(true);
 });
 
 test('If loadPage() returns a valid filename', async () => {
   nock(pageUrl.origin).get(pageUrl.pathname).reply(200, '<html></html>');
   let resultFileName;
-  await new PageLoader(pageUrl.href, tmpDir).loadPage()
+  await PageLoader(pageUrl.href, tmpDir).loadPage()
     .then(({fileName}) => resultFileName = fileName)
 
   expect(resultFileName).toEqual(path.join(tmpDir, docName));
@@ -76,7 +76,7 @@ describe('If loaded document exists in file system', () => {
     nock(pageUrl.origin).get(pageUrl.pathname).reply(200, rawHtml, {
         'Content-Type': 'text/html; charset=utf-8',
       });
-    await new PageLoader(pageUrl.href, tmpDir).loadPage();
+    await PageLoader(pageUrl.href, tmpDir).loadPage();
     const fileNameDef = path.join(tmpDir, docName);
     expect(await fs.access(fileNameDef, constants.R_OK | constants.W_OK)).toBeUndefined();
   });
@@ -85,7 +85,7 @@ describe('If loaded document exists in file system', () => {
     nock(pageUrl.origin).get(pageUrl.pathname).reply(200, rawHtml, {
       'Content-Type': 'text/html; charset=utf-8',
     });
-    await new PageLoader(pageUrl.href, specOutput).loadPage();
+    await PageLoader(pageUrl.href, specOutput).loadPage();
     const fileNameSpec = path.join(specOutput, docName);
     expect(await fs.access(fileNameSpec, constants.R_OK | constants.W_OK)).toBeUndefined();
   });
@@ -99,7 +99,7 @@ describe('Check images and directories', () => {
         'Content-Type': 'image/png',
       });
     const { absFilename: imageFileName } = makeLocalFilename(imageURL, path.join(tmpDir, filesDir));     
-    await new PageLoader(pageUrl.href, tmpDir).load('img', rawHtml);
+    await PageLoader(pageUrl.href, tmpDir).load('img', rawHtml);
     expect(await fs.access(imageFileName, constants.R_OK | constants.W_OK)).toBeUndefined();   
   });
 });
@@ -117,7 +117,7 @@ describe('Check resources and HTML changes', () => {
       })
     const { absFilename: cssFileName } = makeLocalFilename(cssURL, path.join(tmpDir, filesDir));     
     const { absFilename: htmlFileName } = makeLocalFilename(pageUrl, path.join(tmpDir, filesDir));
-    await new PageLoader(pageUrl.href, tmpDir).load('link', rawHtml);
+    await PageLoader(pageUrl.href, tmpDir).load('link', rawHtml);
     expect(await fs.access(cssFileName, constants.R_OK | constants.W_OK)).toBeUndefined();
     expect(await fs.access(`${htmlFileName}.html`, constants.R_OK | constants.W_OK)).toBeUndefined();
   });
@@ -130,7 +130,7 @@ describe('Check resources and HTML changes', () => {
       });
 
     const { absFilename: jsFileName } = makeLocalFilename(jsURL, path.join(tmpDir, filesDir));
-    await new PageLoader(pageUrl.href, tmpDir).load('script', rawHtml);
+    await PageLoader(pageUrl.href, tmpDir).load('script', rawHtml);
     expect(await fs.access(jsFileName, constants.R_OK | constants.W_OK)).toBeUndefined();
   });
 
@@ -138,7 +138,7 @@ describe('Check resources and HTML changes', () => {
     nock(pageUrl.origin).get(pageUrl.pathname).reply(200, rawHtml, {
       'Content-Type': 'text/html; charset=utf-8',
     });
-    const { fileName } = await new PageLoader(pageUrl.href, tmpDir).loadPage();
+    const { fileName } = await PageLoader(pageUrl.href, tmpDir).loadPage();
     const loadedHtml = await fs.readFile(fileName, 'utf-8');
     expect(loadedHtml).toEqual(expectedHtml);
   });
@@ -147,13 +147,13 @@ describe('Check resources and HTML changes', () => {
 describe('Error handling', () => {
   test('Test HTTP non-200 responces for page', async () => {
     nock(pageUrl.origin).get(pageUrl.pathname).reply(201);
-    await expect(new PageLoader(pageUrl.href, tmpDir).loadPage()).rejects.toThrow();
+    await expect(PageLoader(pageUrl.href, tmpDir).loadPage()).rejects.toThrow();
   });
 
   test('Test HTTP non-200 responces for resources', async () => {
     nock(pageUrl.origin).get(jsURL.pathname).reply(201);
     // await expect(new PageLoader(pageUrl.href, tmpDir).load('script', rawHtml)).rejects.toThrow();
-    await expect(new PageLoader(pageUrl.href, tmpDir).load('script', rawHtml))
+    await expect(PageLoader(pageUrl.href, tmpDir).load('script', rawHtml))
       .resolves
       .toEqual([{"reason": Error('Status is not 200'), "status": "rejected"}]);
   });
@@ -163,7 +163,7 @@ describe('Error handling', () => {
       'Content-Type': 'text/html; charset=utf-8',
     });
     fs.chmod(tmpDir, 0o444);
-    await expect(new PageLoader(pageUrl.href, tmpDir).loadPage()).rejects.toThrow();
+    await expect(PageLoader(pageUrl.href, tmpDir).loadPage()).rejects.toThrow();
     fs.chmod(tmpDir, 0o777);
   });
 
@@ -176,7 +176,7 @@ describe('Error handling', () => {
 
     const curFilesDir = path.join(tmpDir, filesDir);
     fs.mkdir(curFilesDir, 0);
-    await expect(new PageLoader(pageUrl.href, tmpDir).load('script', rawHtml))//.rejects.toThrow();
+    await expect(PageLoader(pageUrl.href, tmpDir).load('script', rawHtml))//.rejects.toThrow();
       .resolves
       .toEqual([{"reason": Error(`Access to the directory ${curFilesDir} is denied`), "status": "rejected"}]);
 
