@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Hexlet web page downloader project",
-  "main": "index.js",
+  "main": "src/loader.js",
   "scripts": {
     "test": "make test"
   },
