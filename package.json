@@ -1,0 +1,40 @@
+{
+  "name": "@hexlet/code",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Web-page download utility",
+  "main": "src/loader.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "bin": {
+    "page-loader": "bin/page-loader.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mccman1519/backend-project-4.git"
+  },
+  "author": "mccman1519",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mccman1519/backend-project-4/issues"
+  },
+  "homepage": "https://github.com/mccman1519/backend-project-4#readme",
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.29.1",
+    "mock-fs": "^5.2.0",
+    "nock": "^13.3.2",
+    "prettier": "3.0.3"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "axios-debug-log": "^1.0.0",
+    "cheerio": "^1.0.0-rc.12",
+    "commander": "^11.0.0",
+    "debug": "^4.3.4",
+    "listr": "^0.14.3",
+    "mime": "^3.0.0"
+  }
+}
