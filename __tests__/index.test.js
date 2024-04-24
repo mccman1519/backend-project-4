@@ -16,6 +16,10 @@ const __dirname = path.dirname(__filename);
 const getFixturePath = (name) => path.join(__dirname, '..', '__fixtures__', name);
 
 const testUrl = new URL('https://test-url.com');
+const imageURL = new URL('https://test-url.com/assets/professions/nodejs.png');
+const htmlFileName = 'input.html';
+const imageFileName = 'nodejs.png';
+const filesDir = 'test-url-com-_files';
 
 let tmpDir;
 let specOutput;
@@ -51,12 +55,41 @@ test('Load page', async () => {
   nock(testUrl.origin)
     .get(testUrl.pathname)
     .reply(200, 'A normal reply 200');
-  await expect((await pageLoader(testUrl.origin, tmpDir)).data).toEqual('A normal reply 200');
+  await expect((await pageLoader(testUrl.origin, tmpDir)).rawHtmlData).toEqual('A normal reply 200');
 });
 
 test('Generate valid filename', async () => {
   nock(testUrl.origin)
     .get(testUrl.pathname)
     .reply(200);
-  await expect((await pageLoader(testUrl.origin, tmpDir)).docFileName).toEqual(`${tmpDir}/test-url-com-.html`);
+  await expect((await pageLoader(testUrl.origin, tmpDir)).docFilename).toEqual(`${tmpDir}/test-url-com-.html`);
+});
+
+test('Transform HTML', async () => {
+  nock(testUrl.origin)
+    .get(testUrl.pathname)
+    .replyWithFile(200, getFixturePath(htmlFileName), {
+      'Content-Type': 'text/html; charset=utf-8',
+    });
+  const { docFilename } = await pageLoader(testUrl.origin, tmpDir);
+  const expectedHtml = await fs.readFile(getFixturePath('expected.html'), 'utf-8');
+  const actualHtml = await fs.readFile(docFilename, 'utf-8');
+
+  await expect(expectedHtml).toEqual(actualHtml);
+});
+
+test('Check image was downloaded', async () => {
+  nock(testUrl.origin)
+    .get(testUrl.pathname)
+    .replyWithFile(200, getFixturePath(htmlFileName), {
+      'Content-Type': 'text/html; charset=utf-8',
+    })
+    .get(imageURL.pathname)
+    .replyWithFile(200, getFixturePath(imageFileName), {
+      'Content-Type': 'image/png',
+    });
+
+  const { absFilename } = makeLocalFilename(imageURL, filesDir);
+  await pageLoader(testUrl.origin, tmpDir);
+  expect(await fs.access(absFilename, constants.R_OK | constants.W_OK)).toBeUndefined();
 });

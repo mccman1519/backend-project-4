@@ -17,20 +17,22 @@ program
   .argument('<url>')
   .action(async (url) => {
     const outputPath = path.resolve(program.opts().output) ?? defaultOutput;
-    let plResult;
     try {
-      plResult = await pageLoader(url, outputPath);
+      // Test it with:
+      // https://udaff.com/view_listen/photo/random.html
+      const plResult = await pageLoader(url, outputPath);
+
+      if (program.opts().debug) {
+        // console.dir({...debug});
+        // debug.enable('page-loader*,axios');
+      }
+
+      console.log(`Status: ${plResult.status}`);
+      // console.log(`Data:\n${plResult.data}`);
+      console.log('See in', plResult.docFilename);
     } catch (err) {
-      console.error('Error');
+      console.error(err);
     }
-
-    if (program.opts().debug) {
-      // console.dir({...debug});
-      // debug.enable('page-loader*,axios');
-    }
-
-    console.log(`Status: ${plResult.status}\nData:\n${plResult.data}`);
-    console.log('See in', plResult.docFileName);
   });
 
 program.parse();

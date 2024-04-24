@@ -43,7 +43,7 @@ const makeLocalFilename = (src, filesDirName) => {
 /**
  *
  * @param {*} src A value of src attribute
- * @param {*} pageURL Page URL
+ * @param {URL} pageURL Page URL
  * @returns {URL} A valid URL of the resource
  */
 const makeValidURLFromSrc = (src, pageURL) => {
