@@ -17,6 +17,8 @@ const getFixturePath = (name) => path.join(__dirname, '..', '__fixtures__', name
 
 const testUrl = new URL('https://test-url.com');
 const imageURL = new URL('https://test-url.com/assets/professions/nodejs.png');
+const scriptURL = new URL('https://test-url.com/packs/js/runtime.js');
+const cssURL = new URL('https://test-url.com/assets/application.css');
 const htmlFileName = 'input.html';
 const imageFileName = 'nodejs.png';
 const filesDir = 'test-url-com-_files';
@@ -75,10 +77,10 @@ test('Transform HTML', async () => {
   const expectedHtml = await fs.readFile(getFixturePath('expected.html'), 'utf-8');
   const actualHtml = await fs.readFile(docFilename, 'utf-8');
 
-  await expect(expectedHtml).toEqual(actualHtml);
+  await expect(actualHtml).toEqual(expectedHtml);
 });
 
-test('Check image was downloaded', async () => {
+test('Check images was downloaded', async () => {
   nock(testUrl.origin)
     .get(testUrl.pathname)
     .replyWithFile(200, getFixturePath(htmlFileName), {
@@ -90,6 +92,38 @@ test('Check image was downloaded', async () => {
     });
 
   const { absFilename } = makeLocalFilename(imageURL, filesDir);
+  await pageLoader(testUrl.origin, tmpDir);
+  expect(await fs.access(absFilename, constants.R_OK | constants.W_OK)).toBeUndefined();
+});
+
+test('Check script resources was downloaded', async () => {
+  nock(testUrl.origin)
+    .get(testUrl.pathname)
+    .replyWithFile(200, getFixturePath(htmlFileName), {
+      'Content-Type': 'text/html; charset=utf-8',
+    })
+    .get(scriptURL.pathname)
+    .reply(200, 'this is js script file', {
+      'Content-Type': 'text/javascript; charset=utf-8',
+    });
+
+  const { absFilename } = makeLocalFilename(scriptURL, filesDir);
+  await pageLoader(testUrl.origin, tmpDir);
+  expect(await fs.access(absFilename, constants.R_OK | constants.W_OK)).toBeUndefined();
+});
+
+test('Check css resources was downloaded', async () => {
+  nock(testUrl.origin)
+    .get(testUrl.pathname)
+    .replyWithFile(200, getFixturePath(htmlFileName), {
+      'Content-Type': 'text/html; charset=utf-8',
+    })
+    .get(cssURL.pathname)
+    .reply(200, 'this is css file', {
+      'Content-Type': 'text/css; charset=utf-8',
+    });
+
+  const { absFilename } = makeLocalFilename(cssURL, filesDir);
   await pageLoader(testUrl.origin, tmpDir);
   expect(await fs.access(absFilename, constants.R_OK | constants.W_OK)).toBeUndefined();
 });
