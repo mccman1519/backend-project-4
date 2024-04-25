@@ -1,12 +1,28 @@
+/* eslint-disable import/first */
 /* eslint-disable implicit-arrow-linebreak */
 
-import axios, { AxiosError } from 'axios';
+import { createRequire } from 'module';
+import logger from 'debug';
+
+const require = createRequire(import.meta.url);
+require('axios-debug-log');
+// import axios, { AxiosError } from 'axios';
+
 import * as cheerio from 'cheerio';
 import * as fs from 'node:fs/promises';
 import { URL } from 'node:url';
 import path from 'node:path';
 import { makeLocalFilename, makeValidURLFromSrc, isValidHttpUrl } from './utils.js';
 
+const axios = require('axios');
+
+const debug = logger('page-loader');
+
+/**
+ * TODO: set description
+ * @param {*} url 
+ * @returns 
+ */
 const loadDocument = (url/* , outputPath */) => {
   const validUrl = new URL(url);
   // const docName = `${validUrl.href
@@ -16,7 +32,10 @@ const loadDocument = (url/* , outputPath */) => {
 
   return axios // promise
     .get(validUrl)
-    .then(({ data: rawHtmlData, status }) => ({ rawHtmlData, status }));
+    .then(({ data: rawHtmlData, status }) => {
+      debug('document html data loaded');
+      return { rawHtmlData, status };
+    });
   // Must transforming to be here? Maybe...
   // Must writing go after all: html data load, resources, html tranfsorm
   // or I can return the raw html data for resource downloading?
@@ -26,7 +45,7 @@ const loadDocument = (url/* , outputPath */) => {
 };
 
 /**
- * 
+ *  TODO: set description
  * @param {*} param0 
  * @returns 
  */
@@ -58,6 +77,8 @@ const transformHtml = ({ rawHtmlData }, pageUrl, filesDirName) => {
       }
     });
   });
+
+  debug('html transform successful');
 
   return $.html();
 };
@@ -101,7 +122,7 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
 
     if (validAttrSrc.hostname === url.hostname) {
       const promise = new Promise((resolve, reject) => {
-        console.log(`Downloading ${validAttrSrc}...`);
+        debug(`Downloading ${validAttrSrc}...`);
 
         axios({
           method: 'get',
@@ -128,20 +149,20 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
                 fs
                   .writeFile(absFilename, response.data, encoding)
                   .catch((err) => {
-                    console.log('WRITEFILE', err);
+                    debug(`An ERROR on writing ${absFilename}:`, err);
                   })
                   .then(() => resolve([attrSrc, relFilename]));
                 // );
               });
           })
           .catch((err) => {
-            // console.log(err);
+            debug('Axios rejected with ERROR: ', err);
             reject(err);
           });
       });
       promises = [...promises, promise];
     } else {
-      console.log(`Skipped external URL ${validAttrSrc.href}`);
+      debug(`Skipped external URL ${validAttrSrc.href}`);
     }
   });
 

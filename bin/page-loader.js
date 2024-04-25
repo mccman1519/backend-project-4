@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 
+import logger from 'debug';
 import { Command } from 'commander';
 import path from 'path';
 import { cwd } from 'process';
@@ -8,6 +9,7 @@ import { pageLoader } from '../src/index.js';
 
 const program = new Command();
 const defaultOutput = path.resolve(cwd());
+const debug = logger('page-loader');
 
 program
   .description('Downloads web-page with all its resourses')
@@ -27,9 +29,9 @@ program
         // debug.enable('page-loader*,axios');
       }
 
-      console.log(`Status: ${plResult.status}`);
+      debug(`Status: ${plResult.status}`);
       // console.log(`Data:\n${plResult.data}`);
-      console.log('See in', plResult.docFilename);
+      debug('See in', plResult.docFilename);
     } catch (err) {
       console.error(err);
     }
