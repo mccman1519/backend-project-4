@@ -31,7 +31,7 @@ program
 
       debug(`Status: ${plResult.status}`);
       // console.log(`Data:\n${plResult.data}`);
-      debug('See in', plResult.docFilename);
+      console.log('See in', plResult.docFilename);
     } catch (err) {
       console.error(err);
     }

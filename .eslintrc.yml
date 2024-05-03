@@ -7,8 +7,9 @@ parserOptions:
   sourceType: module
 rules: {
   'import/extensions': ['error', 'ignorePackages', {
-    js: 'never',
+    js: 'always',
     mjs: 'never',
     jsx: 'never',
     }],
+  'no-bitwise': ['error', {'allow': ['|']}],
 }

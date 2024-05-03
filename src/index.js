@@ -6,8 +6,8 @@ import logger from 'debug';
 
 const require = createRequire(import.meta.url);
 require('axios-debug-log');
-// import axios, { AxiosError } from 'axios';
 
+import { AxiosError } from 'axios';
 import * as cheerio from 'cheerio';
 import * as fs from 'node:fs/promises';
 import { URL } from 'node:url';
@@ -25,23 +25,34 @@ const debug = logger('page-loader');
  */
 const loadDocument = (url/* , outputPath */) => {
   const validUrl = new URL(url);
-  // const docName = `${validUrl.href
-  //   .split('://')[1]
-  //   .replace(/[^0-9a-z]/gim, '-')}.html`;
-  // const docFileName = path.join(outputPath, docName);
 
   return axios // promise
     .get(validUrl)
     .then(({ data: rawHtmlData, status }) => {
       debug('document html data loaded');
       return { rawHtmlData, status };
+    })
+    .catch((error) => {
+      if (error.response) {
+        // Запрос был сделан, и сервер ответил кодом состояния, который
+        // выходит за пределы 2xx
+        // console.error(error.response.data);
+        // console.error(error.response.status);
+        // console.error(error.response.headers);
+      } else if (error.request) {
+        // Запрос был сделан, но ответ не получен
+        // `error.request`- это экземпляр XMLHttpRequest в браузере и экземпляр
+        // http.ClientRequest в node.js
+        // console.error(error.request);
+      } else {
+        // Произошло что-то при настройке запроса, вызвавшее ошибку
+        console.error('Error', error.message);
+      }
+      // console.error(error.config);
+
+      debug('Axios rejected with ERROR: ', error);
+      throw new AxiosError(error.message);
     });
-  // Must transforming to be here? Maybe...
-  // Must writing go after all: html data load, resources, html tranfsorm
-  // or I can return the raw html data for resource downloading?
-/*       fs
-        .writeFile(docFileName, data, 'utf-8')
-        .then(() => ({ docFileName, rawHtmlData, status }))); */
 };
 
 /**
@@ -131,6 +142,7 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
           timeout,
         })
           .then((response) => {
+            // eslint-disable-next-line prefer-const
             let { absFilename, relFilename } = makeLocalFilename(validAttrSrc, targetDir);
             // в link может быть любой ресурс - как выбрать расширение файла и нужно ли вообще,
             // если его нет в атрибуте href?
@@ -150,6 +162,7 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
                   .writeFile(absFilename, response.data, encoding)
                   .catch((err) => {
                     debug(`An ERROR on writing ${absFilename}:`, err);
+                    reject(new Error(`An error on writing file ${absFilename}\nError: ${err}`));
                   })
                   .then(() => resolve([attrSrc, relFilename]));
                 // );
@@ -157,7 +170,7 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
           })
           .catch((err) => {
             debug('Axios rejected with ERROR: ', err);
-            reject(err);
+            reject(new AxiosError(err.message));
           });
       });
       promises = [...promises, promise];
@@ -195,7 +208,12 @@ const pageLoader = async (url, outputPath) => {
   // console.log(links); // commes as [{status, value: [srcAttr, transformedAttr]},..., {}]
   const tranfsormedHtml = transformHtml(loadedPageObject, urlObject, filesDirName);
 
-  fs.writeFile(docFilename, /* loadedPageObject.rawHtmlData */ tranfsormedHtml, 'utf-8');
+  fs.writeFile(docFilename, /* loadedPageObject.rawHtmlData */ tranfsormedHtml, 'utf-8')
+    .catch((err) => {
+      debug(`An ERROR on writing ${docFilename}:`, err);
+      console.log('GYGYK');
+      throw new Error(`An error on writing file ${docFilename}\nError: ${err}`);
+    });
 
   return { docFilename, ...loadedPageObject };
 };

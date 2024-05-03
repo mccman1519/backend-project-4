@@ -4,12 +4,12 @@
 import nock from 'nock';
 import path from 'path';
 import os from 'os';
-import { cwd } from 'process';
+// import { cwd } from 'process';
 import { fileURLToPath } from 'url';
 import * as fs from 'node:fs/promises';
+import { constants } from 'fs';
 import { pageLoader } from '../src/index.js';
 import { makeLocalFilename } from '../src/utils.js';
-import { constants } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,11 +53,27 @@ test('Throws on bad URL', async () => {
   await expect(pageLoader(testUrl.origin, tmpDir)).rejects.toThrow();
 });
 
+test('Rejects on non-200', async () => {
+  nock(testUrl.origin)
+    .get(testUrl.pathname)
+    .reply(500, 'Not normal reply 200');
+  await expect(pageLoader(testUrl.origin, tmpDir)).rejects.toThrow();
+});
+
 test('Load page', async () => {
   nock(testUrl.origin)
     .get(testUrl.pathname)
     .reply(200, 'A normal reply 200');
   await expect((await pageLoader(testUrl.origin, tmpDir)).rawHtmlData).toEqual('A normal reply 200');
+});
+
+test('Throws on write file error', async () => {
+  nock(testUrl.origin)
+    .get(testUrl.pathname)
+    .reply(200, 'A normal reply 200');
+  fs.chmod(tmpDir, 0o444);
+  await expect(pageLoader(testUrl.origin, tmpDir)).rejects.toThrow();
+  fs.chmod(tmpDir, 0o777);
 });
 
 test('Generate valid filename', async () => {
