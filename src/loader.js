@@ -160,7 +160,7 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
                 // console.log('FNAME', absFilename);
                 // resolve(
                 fs
-                  .writeFile(absFilename, response.data, encoding)
+                  .writeFile(absFilename, response.data.trim(), encoding)
                   .catch((err) => {
                     debug(`An ERROR on writing ${absFilename}:`, err);
                     reject(new Error(`An error on writing file ${absFilename}\nError: ${err}`));
