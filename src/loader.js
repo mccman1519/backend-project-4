@@ -183,7 +183,7 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
   return promises;
 };
 
-const pageLoader = async (url, outputPath) => {
+export default async (url, outputPath) => {
   if (!isValidHttpUrl(url)) {
     throw new TypeError('Invalid URL (maybe forget protocol?)');
   }
@@ -263,4 +263,4 @@ const pageLoader = async (url, outputPath) => {
   return { docFilename, ...loadedPageObject };
 };
 
-export { pageLoader, loadDocument };
+// export { pageLoader, loadDocument };
