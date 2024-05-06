@@ -13,6 +13,7 @@ import * as fs from 'node:fs/promises';
 import { URL } from 'node:url';
 import path from 'node:path';
 import { makeLocalFilename, makeValidURLFromSrc, isValidHttpUrl } from './utils.js';
+import Listr from 'listr';
 
 const axios = require('axios');
 
@@ -193,24 +194,71 @@ const pageLoader = async (url, outputPath) => {
   const docFilename = path.join(filePath, docName);
   const filesDirName = path.join(filePath, `${path.basename(docName, '.html')}_files`);
 
-  const loadedPageObject = await loadDocument(urlObject.href, outputPath);
+  let loadedPageObject, images, scripts, links, tranfsormedHtml;
 
-  const images = await Promise.allSettled(loadResources('img', loadedPageObject, urlObject, filesDirName));
-  const scripts = await Promise.allSettled(loadResources('script', loadedPageObject, urlObject, filesDirName));
-  const links = await Promise.allSettled(loadResources('link', loadedPageObject, urlObject, filesDirName));
+  await new Listr([
+    {
+      title: 'Loading page data',
+      task: async () => {
+        loadedPageObject = await loadDocument(urlObject.href, outputPath);
+      },
+    },
+    {
+      title: 'Loading images',
+      task: async () => {
+        images = await Promise.allSettled(loadResources('img', loadedPageObject, urlObject, filesDirName));
+      },
+    },
+    {
+      title: 'Loading scripts',
+      task: async () => {
+        scripts = await Promise.allSettled(loadResources('script', loadedPageObject, urlObject, filesDirName));
+      },
+    },
+    {
+      title: 'Loading link resources',
+      task: async () => {
+        links = await Promise.allSettled(loadResources('link', loadedPageObject, urlObject, filesDirName));
+      },
+    },
+    {
+      title: 'Transform HTML',
+      task: async () => {
+        tranfsormedHtml = transformHtml(loadedPageObject, urlObject, filesDirName);
+      },
+    },
+    {
+      title: 'Writing on disk',
+      task: async () => {
+        try {
+          await fs.writeFile(docFilename, /* loadedPageObject.rawHtmlData */ tranfsormedHtml, 'utf-8');
+        } catch (err) {
+          debug(`An ERROR on writing ${docFilename}:`, err);
+          throw new Error(`An error on writing file ${docFilename}\nError: ${err}`);
+        }
+      },
+    },
+  ]).run().catch((err) => {
+    throw err;
+  });
+
+
+  // const images = await Promise.allSettled(loadResources('img', loadedPageObject, urlObject, filesDirName));
+  // const scripts = await Promise.allSettled(loadResources('script', loadedPageObject, urlObject, filesDirName));
+  // const links = await Promise.allSettled(loadResources('link', loadedPageObject, urlObject, filesDirName));
 
   // loadResources('img', loadedPageObject, urlObject);
   // console.log(images); // commes as [{status, value: [srcAttr, transformedAttr]},..., {}]
   // console.log(scripts); // commes as [{status, value: [srcAttr, transformedAttr]},..., {}]
   // console.log(links); // commes as [{status, value: [srcAttr, transformedAttr]},..., {}]
-  const tranfsormedHtml = transformHtml(loadedPageObject, urlObject, filesDirName);
+  // const tranfsormedHtml = transformHtml(loadedPageObject, urlObject, filesDirName);
 
-  try {
-    await fs.writeFile(docFilename, /* loadedPageObject.rawHtmlData */ tranfsormedHtml, 'utf-8');
-  } catch (err) {
-    debug(`An ERROR on writing ${docFilename}:`, err);
-    throw new Error(`An error on writing file ${docFilename}\nError: ${err}`);
-  }
+  // try {
+  //   await fs.writeFile(docFilename, /* loadedPageObject.rawHtmlData */ tranfsormedHtml, 'utf-8');
+  // } catch (err) {
+  //   debug(`An ERROR on writing ${docFilename}:`, err);
+  //   throw new Error(`An error on writing file ${docFilename}\nError: ${err}`);
+  // }
 
   return { docFilename, ...loadedPageObject };
 };
