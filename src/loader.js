@@ -162,7 +162,7 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
                 fs
                   .writeFile(
                     absFilename,
-                    typeof response.data === 'string' ? response.data.trim() : response.data,
+                    /* typeof response.data === 'string' ? response.data.trim() :  */response.data,
                     encoding,
                   )
                   .catch((err) => {
