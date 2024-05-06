@@ -67,15 +67,6 @@ test('Load page', async () => {
   await expect((await pageLoader(testUrl.origin, tmpDir)).rawHtmlData).toEqual('A normal reply 200');
 });
 
-test('Throws on write file error', async () => {
-  nock(testUrl.origin)
-    .get(testUrl.pathname)
-    .reply(200, 'A normal reply 200');
-  fs.chmod(tmpDir, 0o444);
-  await expect(pageLoader(testUrl.origin, tmpDir)).rejects.toThrow();
-  fs.chmod(tmpDir, 0o777);
-});
-
 test('Generate valid filename', async () => {
   nock(testUrl.origin)
     .get(testUrl.pathname)
@@ -142,4 +133,13 @@ test('Check css resources was downloaded', async () => {
   const { absFilename } = makeLocalFilename(cssURL, filesDir);
   await pageLoader(testUrl.origin, tmpDir);
   expect(await fs.access(absFilename, constants.R_OK | constants.W_OK)).toBeUndefined();
+});
+
+test('Throws on write file error', async () => {
+  nock(testUrl.origin)
+    .get(testUrl.pathname)
+    .reply(200, 'A normal reply 200');
+  fs.chmod(tmpDir, 0o444);
+  await expect(pageLoader(testUrl.origin, tmpDir)).rejects.toThrow();
+  fs.chmod(tmpDir, 0o777);
 });

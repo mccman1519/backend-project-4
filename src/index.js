@@ -184,7 +184,7 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
 
 const pageLoader = async (url, outputPath) => {
   if (!isValidHttpUrl(url)) {
-    Promise.reject(new TypeError('Invalid URL (maybe forget protocol?)'));
+    throw new TypeError('Invalid URL (maybe forget protocol?)');
   }
 
   const urlObject = new URL(url);
@@ -193,10 +193,7 @@ const pageLoader = async (url, outputPath) => {
   const docFilename = path.join(filePath, docName);
   const filesDirName = path.join(filePath, `${path.basename(docName, '.html')}_files`);
 
-  const loadedPageObject = await loadDocument(urlObject.href, outputPath)
-    .then((loadResult) => loadResult);
-
-  // console.log(loadedPageObject); <-- OK
+  const loadedPageObject = await loadDocument(urlObject.href, outputPath);
 
   const images = await Promise.allSettled(loadResources('img', loadedPageObject, urlObject, filesDirName));
   const scripts = await Promise.allSettled(loadResources('script', loadedPageObject, urlObject, filesDirName));
@@ -208,12 +205,12 @@ const pageLoader = async (url, outputPath) => {
   // console.log(links); // commes as [{status, value: [srcAttr, transformedAttr]},..., {}]
   const tranfsormedHtml = transformHtml(loadedPageObject, urlObject, filesDirName);
 
-  fs.writeFile(docFilename, /* loadedPageObject.rawHtmlData */ tranfsormedHtml, 'utf-8')
-    .catch((err) => {
-      debug(`An ERROR on writing ${docFilename}:`, err);
-      console.log('GYGYK');
-      throw new Error(`An error on writing file ${docFilename}\nError: ${err}`);
-    });
+  try {
+    await fs.writeFile(docFilename, /* loadedPageObject.rawHtmlData */ tranfsormedHtml, 'utf-8');
+  } catch (err) {
+    debug(`An ERROR on writing ${docFilename}:`, err);
+    throw new Error(`An error on writing file ${docFilename}\nError: ${err}`);
+  }
 
   return { docFilename, ...loadedPageObject };
 };
