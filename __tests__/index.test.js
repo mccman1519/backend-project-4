@@ -8,7 +8,7 @@ import os from 'os';
 import { fileURLToPath } from 'url';
 import * as fs from 'node:fs/promises';
 import { constants } from 'fs';
-import { pageLoader } from '../src/index.js';
+import { pageLoader } from '../src/loader.js';
 import { makeLocalFilename } from '../src/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);

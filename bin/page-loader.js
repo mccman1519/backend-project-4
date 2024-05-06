@@ -5,7 +5,7 @@ import logger from 'debug';
 import { Command } from 'commander';
 import path from 'path';
 import { cwd } from 'process';
-import { pageLoader } from '../src/index.js';
+import { pageLoader } from '../src/loader.js';
 
 const program = new Command();
 const defaultOutput = path.resolve(cwd());
