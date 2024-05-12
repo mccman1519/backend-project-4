@@ -198,59 +198,57 @@ export default async (url, outputPath) => {
   const docFilename = path.join(filePath, docName);
   const filesDirName = path.join(filePath, `${path.basename(docName, '.html')}_files`);
 
-  /*
   let loadedPageObject, images, scripts, links, tranfsormedHtml;
 
-  await new Listr([
-    {
-      title: 'Loading page data',
-      task: async () => {
+  // await new Listr([
+  //   {
+  //     title: 'Loading page data',
+  //     task: async () => {
         loadedPageObject = await loadDocument(urlObject.href, outputPath);
-      },
-    },
-    {
-      title: 'Loading images',
-      task: async () => {
+    //   },
+    // },
+    // {
+    //   title: 'Loading images',
+    //   task: async () => {
         images = await Promise.allSettled(loadResources('img', loadedPageObject, urlObject, filesDirName));
-      },
-    },
-    {
-      title: 'Loading scripts',
-      task: async () => {
+    //   },
+    // },
+    // {
+    //   title: 'Loading scripts',
+    //   task: async () => {
         scripts = await Promise.allSettled(loadResources('script', loadedPageObject, urlObject, filesDirName));
-      },
-    },
-    {
-      title: 'Loading link resources',
-      task: async () => {
+    //   },
+    // },
+    // {
+    //   title: 'Loading link resources',
+    //   task: async () => {
         links = await Promise.allSettled(loadResources('link', loadedPageObject, urlObject, filesDirName));
-      },
-    },
-    {
-      title: 'Transform HTML',
-      task: async () => {
+    //   },
+    // },
+    // {
+    //   title: 'Transform HTML',
+    //   task: async () => {
         tranfsormedHtml = transformHtml(loadedPageObject, urlObject, filesDirName);
-      },
-    },
-    {
-      title: 'Writing on disk',
-      task: async () => {
+    //   },
+    // },
+    // {
+    //   title: 'Writing on disk',
+    //   task: async () => {
         try {
           await fs.writeFile(docFilename, tranfsormedHtml, 'utf-8');
         } catch (err) {
           debug(`An ERROR on writing ${docFilename}:`, err);
           throw new Error(`An error on writing file ${docFilename}\nError: ${err}`);
         }
-      },
-    },
-  ]).run().catch((err) => {
-    throw err;
-  }); */
+  //     },
+  //   },
+  // ]).run().catch((err) => {
+  //   throw err;
+  // });
 
-
-  const images = await Promise.allSettled(loadResources('img', loadedPageObject, urlObject, filesDirName));
-  const scripts = await Promise.allSettled(loadResources('script', loadedPageObject, urlObject, filesDirName));
-  const links = await Promise.allSettled(loadResources('link', loadedPageObject, urlObject, filesDirName));
+  /* const images = */ await Promise.allSettled(loadResources('img', loadedPageObject, urlObject, filesDirName));
+  /* const scripts = */ await Promise.allSettled(loadResources('script', loadedPageObject, urlObject, filesDirName));
+  /* const links = */ await Promise.allSettled(loadResources('link', loadedPageObject, urlObject, filesDirName));
 
   // loadResources('img', loadedPageObject, urlObject);
   // console.log(images); // commes as [{status, value: [srcAttr, transformedAttr]},..., {}]
