@@ -198,9 +198,10 @@ export default async (url, outputPath) => {
   const docFilename = path.join(filePath, docName);
   const filesDirName = path.join(filePath, `${path.basename(docName, '.html')}_files`);
 
+  /*
   let loadedPageObject, images, scripts, links, tranfsormedHtml;
 
-/*   await new Listr([
+  await new Listr([
     {
       title: 'Loading page data',
       task: async () => {
