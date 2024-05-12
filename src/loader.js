@@ -162,7 +162,7 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
                 fs
                   .writeFile(
                     absFilename,
-                    typeof response.data === 'string' ? response.data.toString() : response.data,
+                    /* typeof response.data === 'string' ? response.data.toString() :  */response.data,
                     encoding,
                   )
                   .catch((err) => {
@@ -200,7 +200,7 @@ export default async (url, outputPath) => {
 
   let loadedPageObject, images, scripts, links, tranfsormedHtml;
 
-  await new Listr([
+/*   await new Listr([
     {
       title: 'Loading page data',
       task: async () => {
@@ -235,7 +235,7 @@ export default async (url, outputPath) => {
       title: 'Writing on disk',
       task: async () => {
         try {
-          await fs.writeFile(docFilename, /* loadedPageObject.rawHtmlData */ tranfsormedHtml, 'utf-8');
+          await fs.writeFile(docFilename, tranfsormedHtml, 'utf-8');
         } catch (err) {
           debug(`An ERROR on writing ${docFilename}:`, err);
           throw new Error(`An error on writing file ${docFilename}\nError: ${err}`);
@@ -244,12 +244,12 @@ export default async (url, outputPath) => {
     },
   ]).run().catch((err) => {
     throw err;
-  });
+  }); */
 
 
-  // const images = await Promise.allSettled(loadResources('img', loadedPageObject, urlObject, filesDirName));
-  // const scripts = await Promise.allSettled(loadResources('script', loadedPageObject, urlObject, filesDirName));
-  // const links = await Promise.allSettled(loadResources('link', loadedPageObject, urlObject, filesDirName));
+  const images = await Promise.allSettled(loadResources('img', loadedPageObject, urlObject, filesDirName));
+  const scripts = await Promise.allSettled(loadResources('script', loadedPageObject, urlObject, filesDirName));
+  const links = await Promise.allSettled(loadResources('link', loadedPageObject, urlObject, filesDirName));
 
   // loadResources('img', loadedPageObject, urlObject);
   // console.log(images); // commes as [{status, value: [srcAttr, transformedAttr]},..., {}]
@@ -257,12 +257,12 @@ export default async (url, outputPath) => {
   // console.log(links); // commes as [{status, value: [srcAttr, transformedAttr]},..., {}]
   // const tranfsormedHtml = transformHtml(loadedPageObject, urlObject, filesDirName);
 
-  // try {
-  //   await fs.writeFile(docFilename, /* loadedPageObject.rawHtmlData */ tranfsormedHtml, 'utf-8');
-  // } catch (err) {
-  //   debug(`An ERROR on writing ${docFilename}:`, err);
-  //   throw new Error(`An error on writing file ${docFilename}\nError: ${err}`);
-  // }
+  try {
+    await fs.writeFile(docFilename, /* loadedPageObject.rawHtmlData */ tranfsormedHtml, 'utf-8');
+  } catch (err) {
+    debug(`An ERROR on writing ${docFilename}:`, err);
+    throw new Error(`An error on writing file ${docFilename}\nError: ${err}`);
+  }
 
   return { docFilename, ...loadedPageObject };
 };
