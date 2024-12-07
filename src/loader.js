@@ -114,12 +114,12 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
     script: {
       srcType: 'src',
       responseType: 'text',
-      encoding: 'utf-8',
+      encoding: /* 'utf-8' */'binary',
     },
     link: {
       srcType: 'href',
       responseType: 'text',
-      encoding: 'utf-8',
+      encoding: /* 'utf-8' */'binary',
     },
   };
 
@@ -162,7 +162,7 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
                 fs
                   .writeFile(
                     absFilename,
-                    typeof response.data === 'string' ? `${response.data.toString()}`/* .replace(/\n$/, '') */ : response.data,
+                    /* typeof response.data === 'string' ? response.data.toString().replace(/\n$/, '') : */response.data,
                     encoding,
                   )
                   .catch((err) => {
