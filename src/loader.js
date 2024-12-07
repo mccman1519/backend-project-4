@@ -162,7 +162,7 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
                 fs
                   .writeFile(
                     absFilename,
-                    /* typeof response.data === 'string' ? response.data.toString() :  */response.data,
+                    /* typeof response.data === 'string' ? response.data.toString() :  */response.data.replace(/\n$/, ''),
                     encoding,
                   )
                   .catch((err) => {
@@ -204,42 +204,42 @@ export default async (url, outputPath) => {
   //   {
   //     title: 'Loading page data',
   //     task: async () => {
-        loadedPageObject = await loadDocument(urlObject.href, outputPath);
-    //   },
-    // },
-    // {
-    //   title: 'Loading images',
-    //   task: async () => {
-        images = await Promise.allSettled(loadResources('img', loadedPageObject, urlObject, filesDirName));
-    //   },
-    // },
-    // {
-    //   title: 'Loading scripts',
-    //   task: async () => {
-        scripts = await Promise.allSettled(loadResources('script', loadedPageObject, urlObject, filesDirName));
-    //   },
-    // },
-    // {
-    //   title: 'Loading link resources',
-    //   task: async () => {
-        links = await Promise.allSettled(loadResources('link', loadedPageObject, urlObject, filesDirName));
-    //   },
-    // },
-    // {
-    //   title: 'Transform HTML',
-    //   task: async () => {
-        tranfsormedHtml = transformHtml(loadedPageObject, urlObject, filesDirName);
-    //   },
-    // },
-    // {
-    //   title: 'Writing on disk',
-    //   task: async () => {
-        try {
-          await fs.writeFile(docFilename, tranfsormedHtml, 'utf-8');
-        } catch (err) {
-          debug(`An ERROR on writing ${docFilename}:`, err);
-          throw new Error(`An error on writing file ${docFilename}\nError: ${err}`);
-        }
+  loadedPageObject = await loadDocument(urlObject.href, outputPath);
+  //   },
+  // },
+  // {
+  //   title: 'Loading images',
+  //   task: async () => {
+  images = await Promise.allSettled(loadResources('img', loadedPageObject, urlObject, filesDirName));
+  //   },
+  // },
+  // {
+  //   title: 'Loading scripts',
+  //   task: async () => {
+  scripts = await Promise.allSettled(loadResources('script', loadedPageObject, urlObject, filesDirName));
+  //   },
+  // },
+  // {
+  //   title: 'Loading link resources',
+  //   task: async () => {
+  links = await Promise.allSettled(loadResources('link', loadedPageObject, urlObject, filesDirName));
+  //   },
+  // },
+  // {
+  //   title: 'Transform HTML',
+  //   task: async () => {
+  tranfsormedHtml = transformHtml(loadedPageObject, urlObject, filesDirName);
+  //   },
+  // },
+  // {
+  //   title: 'Writing on disk',
+  //   task: async () => {
+  try {
+    await fs.writeFile(docFilename, tranfsormedHtml, 'utf-8');
+  } catch (err) {
+    debug(`An ERROR on writing ${docFilename}:`, err);
+    throw new Error(`An error on writing file ${docFilename}\nError: ${err}`);
+  }
   //     },
   //   },
   // ]).run().catch((err) => {
