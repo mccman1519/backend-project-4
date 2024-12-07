@@ -113,12 +113,12 @@ const loadResources = (selector, { rawHtmlData }, url, targetDir, timeout = 3000
     },
     script: {
       srcType: 'src',
-      responseType: 'text',
+      responseType: /* 'text' */'stream',
       encoding: /* 'utf-8' */'binary',
     },
     link: {
       srcType: 'href',
-      responseType: 'text',
+      responseType: /* 'text' */'stream',
       encoding: /* 'utf-8' */'binary',
     },
   };
