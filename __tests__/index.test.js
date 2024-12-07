@@ -1,5 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable no-undef */
+/* eslint-disable no-bitwise */
 
 import nock from 'nock';
 import path from 'path';
