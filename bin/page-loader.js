@@ -34,6 +34,7 @@ program
       console.log('See in', plResult.docFilename);
     } catch (err) {
       console.error(err);
+      throw err;
     }
   });
 

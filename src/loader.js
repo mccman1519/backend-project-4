@@ -204,13 +204,7 @@ export default async (url, outputPath = '.') => {
   //   {
   //     title: 'Loading page data',
   //     task: async () => {
-  try {
-    loadedPageObject = await loadDocument(urlObject.href, outputPath);
-  } catch (err) {
-    if (err) {
-      throw err;
-    }
-  }
+  loadedPageObject = await loadDocument(urlObject.href, outputPath);
   //   },
   // },
   // {
